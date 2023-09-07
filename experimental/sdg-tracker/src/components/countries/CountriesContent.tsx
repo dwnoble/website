@@ -196,9 +196,8 @@ const CountriesContent: React.FC<{
           </PlaceTitle>
           <AllGoalsOverview />
           {rootTopics.map((_, topicIndex) => (
-            <MainLayoutContent>
+            <MainLayoutContent key={topicIndex}>
               <GoalOverview
-                key={topicIndex}
                 goalNumber={topicIndex + 1}
                 showExploreLink={true}
               />
@@ -404,10 +403,7 @@ const ChartGoalBlock: React.FC<{
 }> = ({ placeDcid, goal, targetData }) => {
   return (
     <>
-      <GoalOverview
-        goalNumber={Number(goal)}
-        showExploreLink={false}
-      />
+      <GoalOverview goalNumber={Number(goal)} showExploreLink={false} />
       {Object.keys(targetData).map((target, i) => {
         return (
           <ChartTargetBlock
