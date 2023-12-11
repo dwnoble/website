@@ -29,6 +29,7 @@ import {
   drawHorizontalBarChart,
   drawStackBarChart,
 } from "../../chart/draw_bar";
+import { ComponentDataConfig, DataCommonsDataRow } from "../../chart/types";
 import { URL_PATH } from "../../constants/app/visualization_constants";
 import { PLACE_TYPES } from "../../shared/constants";
 import { PointApiResponse, SeriesApiResponse } from "../../shared/stat_types";
@@ -47,11 +48,11 @@ import {
 import { getPlaceNames, getPlaceType } from "../../utils/place_utils";
 import { getDateRange } from "../../utils/string_utils";
 import {
+  ReplacementStrings,
   getDenomInfo,
   getNoDataErrorMsg,
   getStatFormat,
   getStatVarNames,
-  ReplacementStrings,
   showError,
 } from "../../utils/tile_utils";
 import { ChartTileContainer } from "./chart_tile";
@@ -92,6 +93,8 @@ interface BarTileSpecificSpec {
   xLabelLinkRoot?: string;
   // Y-axis margin / text width
   yAxisMargin?: number;
+  // Sets chart data using these specific values
+  data?: ComponentDataConfig;
 }
 
 export type BarTilePropType = MultiOrContainedInPlaceMultiVariableTileType &
@@ -117,12 +120,34 @@ export function BarTile(props: BarTilePropType): JSX.Element {
   );
   useEffect(() => {
     if (!barChartData || !_.isEqual(barChartData.props, props)) {
+      if (!_.isEmpty(props.data)) {
+        const dataGroups = componentDataConfigToDataGroup(props.data);
+        setBarChartData({
+          dataGroup: dataGroups,
+          sources: new Set<string>(),
+          dateRange: "",
+          props,
+          statVarOrder: [],
+          unit: props.data.meta.unit || "",
+          errorMsg: "",
+        });
+        return;
+      }
       (async () => {
         const data = await fetchData(props);
+        const componentDataConfig = dataGroupToComponentDataConfig(
+          data.dataGroup,
+          data.unit
+        );
+        const event = new CustomEvent<ComponentDataConfig>("dataloaded", {
+          bubbles: true,
+          detail: componentDataConfig,
+        });
+        chartContainerRef.current.dispatchEvent(event);
         setBarChartData(data);
       })();
     }
-  }, [props, barChartData]);
+  }, [props, barChartData, chartContainerRef]);
 
   const drawFn = useCallback(() => {
     if (_.isEmpty(barChartData)) {
@@ -283,6 +308,74 @@ export const fetchData = async (props: BarTilePropType) => {
     return null;
   }
 };
+
+function dataGroupToComponentDataConfig(
+  dataGroups: DataGroup[],
+  unit: string
+): ComponentDataConfig {
+  const dataRows: DataCommonsDataRow[] = [];
+  dataGroups.forEach((dataGroup) => {
+    const entityName = dataGroup.label;
+    const url = dataGroup.link;
+    dataGroup.value.forEach((dataGroupValue) => {
+      dataRows.push({
+        variableName: dataGroupValue.label,
+        entityDcid: dataGroupValue.dcid,
+        entityName,
+        value: dataGroupValue.value,
+        date: dataGroupValue.date,
+      });
+      dataGroupValue.date;
+    });
+  });
+
+  return {
+    values: {
+      data: dataRows,
+    },
+    meta: {
+      dateColumn: "date",
+      entityNameColumn: "entityName",
+      valueColumn: "value",
+      variableNameColumn: "variableName",
+      unit,
+    },
+  };
+}
+
+function componentDataConfigToDataGroup(
+  componentDataConfig: ComponentDataConfig
+): DataGroup[] {
+  const dataGroups: { [key: string]: DataGroup } = {};
+  const {
+    dateColumn,
+    entityDcidColumn,
+    entityNameColumn,
+    valueColumn,
+    variableNameColumn,
+  } = componentDataConfig.meta;
+
+  componentDataConfig.values.data.forEach((dataRow) => {
+    const dataGroupLabel = dataRow[entityNameColumn];
+    if (typeof dataGroupLabel !== "string") {
+      return;
+    }
+    if (!(dataGroupLabel in dataGroups)) {
+      dataGroups[dataGroupLabel] = new DataGroup(dataGroupLabel, []);
+    }
+    dataGroups[dataGroupLabel].value.push(
+      new DataPoint(
+        variableNameColumn ? String(dataRow[variableNameColumn]) : "",
+        Number(dataRow[valueColumn]),
+        entityDcidColumn ? String(dataRow[entityDcidColumn]) : undefined,
+        undefined,
+        undefined,
+        dateColumn ? String(dataRow[dateColumn]) : undefined
+      )
+    );
+  });
+  return Object.values(dataGroups);
+}
 
 function rawToChart(
   props: BarTilePropType,

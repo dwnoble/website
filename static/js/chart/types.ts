@@ -177,3 +177,35 @@ export interface LineChartOptions extends ChartOptions {
   handleDotClick?: (dotData: DotDataPoint) => void;
   timeScale?: TimeScaleOption;
 }
+
+/**
+ * Data row for ComponentDataConfig
+ */
+export interface DataRow {
+  [key: string]: string | number | boolean | null;
+}
+
+export interface DataCommonsDataRow extends DataRow {
+  variableName: string;
+  entityDcid: string;
+  entityName: string;
+  value: string | number | boolean | null;
+  date: string;
+}
+
+/**
+ * Chart data input and chart configuration
+ */
+export interface ComponentDataConfig {
+  values: {
+    data: DataRow[];
+  };
+  meta: {
+    dateColumn?: string;
+    entityDcidColumn?: string;
+    entityNameColumn: string;
+    unit?: string;
+    valueColumn: string;
+    variableNameColumn?: string;
+  };
+}

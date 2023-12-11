@@ -21,6 +21,7 @@ import _ from "lodash";
 
 import tilesCssString from "!!raw-loader!sass-loader!../css/tiles.scss";
 
+import { ComponentDataConfig } from "../js/chart/types";
 import { BarTile, BarTilePropType } from "../js/components/tiles/bar_tile";
 import { DEFAULT_PER_CAPITA_DENOM } from "./constants";
 import {
@@ -215,6 +216,10 @@ export class DatacommonsBarComponent extends LitElement {
   @property()
   placeNameProp!: string;
 
+  // Optional: data value to plot
+  @property({ type: Object })
+  data: ComponentDataConfig;
+
   render(): HTMLElement {
     const statVarDcids: string[] = this.variables;
     const statVarSpec = [];
@@ -256,8 +261,21 @@ export class DatacommonsBarComponent extends LitElement {
       title: this.header || this.title,
       useLollipop: this.lollipop,
       yAxisMargin: this.yAxisMargin,
+      data: this.data ? this.data : undefined,
     };
+    const el = createWebComponentElement(BarTile, barTileProps);
+    el.addEventListener(
+      "dataloaded",
+      (evt: CustomEvent<ComponentDataConfig>) => {
+        evt.stopPropagation();
 
-    return createWebComponentElement(BarTile, barTileProps);
+        const newEvent = new CustomEvent("dataloaded", {
+          bubbles: true,
+          detail: evt.detail,
+        });
+        this.dispatchEvent(newEvent);
+      }
+    );
+    return el;
   }
 }
