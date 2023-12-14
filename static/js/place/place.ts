@@ -20,10 +20,18 @@ import React from "react";
 import ReactDOM from "react-dom";
 
 import { PageData } from "../chart/types";
+import { NlSearchBar } from "../components/nl_search_bar";
 import { loadLocaleData } from "../i18n/i18n";
+import {
+  GA_EVENT_NL_SEARCH,
+  GA_PARAM_QUERY,
+  GA_PARAM_SOURCE,
+  GA_VALUE_SEARCH_SOURCE_PLACE_PAGE,
+  triggerGAEvent,
+} from "../shared/ga_events";
 import { initSearchAutocomplete } from "../shared/place_autocomplete";
 import { ChildPlace } from "./child_places_menu";
-import { MainPane } from "./main_pane";
+import { MainPane, showOverview } from "./main_pane";
 import { Menu } from "./menu";
 import { PageSubtitle } from "./page_subtitle";
 import { ParentPlace } from "./parent_breadcrumbs";
@@ -123,6 +131,18 @@ async function getLandingPageData(
     });
 }
 
+/**
+ * Handler for NL search bar
+ * @param q search query entered by user
+ */
+function onSearch(q: string): void {
+  triggerGAEvent(GA_EVENT_NL_SEARCH, {
+    [GA_PARAM_QUERY]: q,
+    [GA_PARAM_SOURCE]: GA_VALUE_SEARCH_SOURCE_PLACE_PAGE,
+  });
+  window.location.href = `/explore#q=${encodeURIComponent(q)}`;
+}
+
 function renderPage(): void {
   const urlParams = new URLSearchParams(window.location.search);
   const urlHash = window.location.hash;
@@ -133,6 +153,7 @@ function renderPage(): void {
   const placeName = document.getElementById("place-name").dataset.pn;
   const placeType = document.getElementById("place-type").dataset.pt;
   const locale = document.getElementById("locale").dataset.lc;
+  const summaryText = document.getElementById("place-summary").dataset.summary;
   const landingPagePromise = getLandingPageData(dcid, category, locale, seed);
 
   Promise.all([
@@ -155,6 +176,17 @@ function renderPage(): void {
       const data: PageData = landingPageData;
       const isUsaPlace = isPlaceInUsa(dcid, data.parentPlaces);
       ReactDOM.render(
+        React.createElement(NlSearchBar, {
+          initialValue: "",
+          inputId: "query-search-input",
+          onSearch,
+          placeholder: `Enter a question about ${placeName} to explore`,
+          shouldAutoFocus: false,
+        }),
+        document.getElementById("nl-search-bar")
+      );
+
+      ReactDOM.render(
         React.createElement(Menu, {
           pageChart: data.pageChart,
           categories: data.categories,
@@ -164,24 +196,26 @@ function renderPage(): void {
         document.getElementById("menu")
       );
 
-      // Earth has no parent places.
-      if (data.parentPlaces.length > 0) {
+      if (!showOverview(isUsaPlace, placeType, category)) {
+        // Earth has no parent places.
+        if (data.parentPlaces.length > 0) {
+          ReactDOM.render(
+            React.createElement(ParentPlace, {
+              names: data.names,
+              parentPlaces: data.parentPlaces,
+              placeType,
+            }),
+            document.getElementById("place-type")
+          );
+        }
         ReactDOM.render(
-          React.createElement(ParentPlace, {
-            names: data.names,
-            parentPlaces: data.parentPlaces,
-            placeType,
+          React.createElement(PlaceHighlight, {
+            dcid,
+            highlight: data.highlight,
           }),
-          document.getElementById("place-type")
+          document.getElementById("place-highlight")
         );
       }
-      ReactDOM.render(
-        React.createElement(PlaceHighlight, {
-          dcid,
-          highlight: data.highlight,
-        }),
-        document.getElementById("place-highlight")
-      );
 
       // Readjust sidebar based on parent places.
       updatePageLayoutState();
@@ -216,6 +250,7 @@ function renderPage(): void {
         }),
         document.getElementById("subtitle")
       );
+
       ReactDOM.render(
         React.createElement(MainPane, {
           category,
@@ -229,6 +264,8 @@ function renderPage(): void {
           parentPlaces: data.parentPlaces,
           categoryStrings: data.categories,
           locale,
+          highlight: data.highlight,
+          summaryText,
         }),
         document.getElementById("main-pane")
       );

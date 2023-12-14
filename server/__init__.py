@@ -34,6 +34,7 @@ import server.lib.i18n as i18n
 from server.lib.nl.common.bad_words import EMPTY_BANNED_WORDS
 from server.lib.nl.common.bad_words import load_bad_words
 from server.lib.nl.detection import llm_prompt
+import server.lib.place_summaries as place_summaries
 import server.lib.util as libutil
 import server.services.bigtable as bt
 from server.services.discovery import configure_endpoints_from_ingress
@@ -148,7 +149,7 @@ def register_routes_admin(app):
 
 
 def register_routes_common(app):
-  # apply the blueprints for main app
+  # apply blueprints for main app
   from server.routes import static
   app.register_blueprint(static.bp)
 
@@ -265,8 +266,8 @@ def create_app(nl_root=DEFAULT_NL_ROOT):
     cache.init_app(app, {'CACHE_TYPE': 'NullCache'})
 
   # Configure ingress
-  ingress_config_path = os.environ.get(
-      'INGRESS_CONFIG_PATH')  # See deployment yamls.
+  # See deployment yamls.
+  ingress_config_path = os.environ.get('INGRESS_CONFIG_PATH')
   if ingress_config_path:
     configure_endpoints_from_ingress(ingress_config_path)
 
@@ -284,8 +285,10 @@ def create_app(nl_root=DEFAULT_NL_ROOT):
   if app.config['ENABLE_ADMIN']:
     register_routes_admin(app)
 
-  # Load place explorer summaries
-  app.config['PLACE_EXPLORER_SUMMARIES'] = libutil.get_place_summaries()
+  # Load place explorer summaries & allowlist of places to show summaries for
+  # Used when rendering place pages
+  app.config['PLACE_SUMMARY_ALLOW_LIST'] = place_summaries.get_place_allowlist()
+  app.config['PLACE_EXPLORER_SUMMARIES'] = place_summaries.get_place_summaries()
 
   # Load topic page config
   topic_page_configs = libutil.get_topic_page_config()
