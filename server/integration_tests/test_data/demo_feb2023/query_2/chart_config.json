@@ -71,7 +71,35 @@
                 "tiles": [
                   {
                     "statVarKey": [
-                      "Count_WildfireEvent_2022"
+                      "Count_FireIncidentComplex_2022_2791262687"
+                    ],
+                    "title": "Count of Fire Incident Complex Event in California",
+                    "type": "LINE"
+                  }
+                ]
+              },
+              {
+                "tiles": [
+                  {
+                    "description": "Count of Fire Incident Complex Event in California",
+                    "statVarKey": [
+                      "Count_FireIncidentComplex_2022"
+                    ],
+                    "title": "Count of Fire Incident Complex Event in California",
+                    "type": "HIGHLIGHT"
+                  }
+                ]
+              }
+            ],
+            "title": "Count of Fire Incident Complex Event"
+          },
+          {
+            "columns": [
+              {
+                "tiles": [
+                  {
+                    "statVarKey": [
+                      "Count_WildfireEvent_2022_3627417845"
                     ],
                     "title": "Wildfires in California",
                     "type": "LINE"
@@ -98,28 +126,32 @@
               {
                 "tiles": [
                   {
+                    "rankingTileSpec": {
+                      "rankingCount": 10,
+                      "showHighest": true
+                    },
                     "statVarKey": [
-                      "Count_FireIncidentComplex_2022"
+                      "Count_PrescribedFireEvent_2022"
                     ],
-                    "title": "Count of Fire Incident Complex Event in California",
-                    "type": "LINE"
+                    "title": "Count of Prescribed Fire Event in Counties of California (${date})",
+                    "type": "RANKING"
                   }
                 ]
               },
               {
                 "tiles": [
                   {
-                    "description": "Count of Fire Incident Complex Event in California",
                     "statVarKey": [
-                      "Count_FireIncidentComplex_2022"
+                      "Count_PrescribedFireEvent_2022"
                     ],
-                    "title": "Count of Fire Incident Complex Event in California",
-                    "type": "HIGHLIGHT"
+                    "title": "Count of Prescribed Fire Event in Counties of California (${date})",
+                    "type": "MAP"
                   }
                 ]
               }
             ],
-            "title": "Count of Fire Incident Complex Event"
+            "denom": "Count_Person",
+            "title": "Count of Prescribed Fire Event in Counties of California"
           }
         ],
         "statVarSpec": {
@@ -128,8 +160,25 @@
             "name": "Count of Fire Incident Complex Event",
             "statVar": "Count_FireIncidentComplex"
           },
+          "Count_FireIncidentComplex_2022_2791262687": {
+            "date": "2022",
+            "facetId": "2791262687",
+            "name": "Count of Fire Incident Complex Event",
+            "statVar": "Count_FireIncidentComplex"
+          },
+          "Count_PrescribedFireEvent_2022": {
+            "date": "2022",
+            "name": "Count of Prescribed Fire Event",
+            "statVar": "Count_PrescribedFireEvent"
+          },
           "Count_WildfireEvent_2022": {
             "date": "2022",
+            "name": "Wildfires",
+            "statVar": "Count_WildfireEvent"
+          },
+          "Count_WildfireEvent_2022_3627417845": {
+            "date": "2022",
+            "facetId": "3627417845",
             "name": "Wildfires",
             "statVar": "Count_WildfireEvent"
           },
