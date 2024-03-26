@@ -183,7 +183,11 @@ class DataCommonsClient {
       params.variables,
       params.variableProps || DEFAULT_VARIABLE_PROPS
     );
-    const perCapitaPropValues = !_.isEmpty(params.perCapitaVariables)
+    const validPerCapitaVariables = _.intersection(
+      params.perCapitaVariables,
+      params.variables
+    );
+    const perCapitaPropValues = !_.isEmpty(validPerCapitaVariables)
       ? await this.getNodePropValues(
           [TOTAL_POPULATION_VARIABLE],
           DEFAULT_VARIABLE_PROPS
@@ -192,7 +196,7 @@ class DataCommonsClient {
 
     // Fetch population data for per capita calculations
     let populationObservations: SeriesApiResponse = { data: {}, facets: {} };
-    if (!_.isEmpty(params.perCapitaVariables)) {
+    if (!_.isEmpty(validPerCapitaVariables)) {
       populationObservations =
         "parentEntity" in params
           ? await this.webClient.getObservationsSeriesWithin({
@@ -333,7 +337,11 @@ class DataCommonsClient {
       params.variables,
       params.variableProps || DEFAULT_VARIABLE_PROPS
     );
-    const perCapitaPropValues = !_.isEmpty(params.perCapitaVariables)
+    const validPerCapitaVariables = _.intersection(
+      params.perCapitaVariables,
+      params.variables
+    );
+    const perCapitaPropValues = !_.isEmpty(validPerCapitaVariables)
       ? await this.getNodePropValues(
           [TOTAL_POPULATION_VARIABLE],
           DEFAULT_VARIABLE_PROPS
@@ -342,7 +350,7 @@ class DataCommonsClient {
 
     // Fetch population data for per capita calculations
     let populationObservations: SeriesApiResponse = { data: {}, facets: {} };
-    if (!_.isEmpty(params.perCapitaVariables)) {
+    if (!_.isEmpty(validPerCapitaVariables)) {
       populationObservations =
         "parentEntity" in params
           ? await this.webClient.getObservationsSeriesWithin({
@@ -505,6 +513,8 @@ class DataCommonsClient {
             observation: {
               date: observation.date,
               metadata: {
+                importName: _.get(facet, "importName", null),
+                provenanceUrl: _.get(facet, "provenanceUrl", null),
                 unit: _.get(facet, "unit", null),
                 unitDisplayName: _.get(
                   observation,
@@ -532,6 +542,11 @@ class DataCommonsClient {
         ) {
           const series =
             populationObservations.data[TOTAL_POPULATION_VARIABLE][entityDcid];
+          const populationFacet = _.get(
+            populationObservations.facets,
+            series.facet || "",
+            {} as StatMetadata
+          );
 
           const closestPopulationObservation = this.getClosestObservationToDate(
             series.series,
@@ -554,7 +569,16 @@ class DataCommonsClient {
                 closestPopulationObservation && !_.isEmpty(observation)
                   ? closestPopulationObservation.value
                   : null,
-              metadata: {},
+              metadata: {
+                importName: _.get(populationFacet, "importName", null),
+                provenanceUrl: _.get(populationFacet, "provenanceUrl", null),
+                unit: _.get(populationFacet, "unit", null),
+                unitDisplayName: _.get(
+                  observation,
+                  "unitDisplayName",
+                  _.get(populationFacet, "unitDisplayName", null)
+                ),
+              },
             },
             quotientValue:
               closestPopulationObservation && !_.isEmpty(observation)
@@ -633,6 +657,8 @@ class DataCommonsClient {
                 date: observation.date,
                 value: observation.value,
                 metadata: {
+                  importName: _.get(facet, "importName", null),
+                  provenanceUrl: _.get(facet, "provenanceUrl", null),
                   unit: _.get(facet, "unit", null),
                   unitDisplayName: _.get(
                     observation,
@@ -655,6 +681,15 @@ class DataCommonsClient {
           // Set per-capita data
           if (perCapitaObservations.length === series.series.length) {
             // perCapitaObservations is a parallel array with the data series
+            const populationFacetName =
+              populationObservations.data[TOTAL_POPULATION_VARIABLE][entityDcid]
+                .facet;
+            const populationFacet = _.get(
+              populationObservations.facets,
+              populationFacetName || "",
+              {} as StatMetadata
+            );
+
             const perCapitaObservation =
               perCapitaObservations[observationIndex];
             row.variable.denominator = {
@@ -668,7 +703,16 @@ class DataCommonsClient {
               observation: {
                 date: perCapitaObservation.date,
                 value: perCapitaObservation.value,
-                metadata: {},
+                metadata: {
+                  importName: _.get(populationFacet, "importName", null),
+                  provenanceUrl: _.get(populationFacet, "provenanceUrl", null),
+                  unit: _.get(populationFacet, "unit", null),
+                  unitDisplayName: _.get(
+                    observation,
+                    "unitDisplayName",
+                    _.get(populationFacet, "unitDisplayName", null)
+                  ),
+                },
               },
               quotientValue: perCapitaObservation.quotientValue,
             };
